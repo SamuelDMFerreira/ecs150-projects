@@ -10,7 +10,7 @@
 bool processLine(void* mainBuffer, int fileDescriptor, char* word)
 {
 	// line buffer stats
-	char* lineBuffer = malloc(sizeof(char));
+	char* lineBuffer = (char*) malloc(sizeof(char));
 	int currIndex = 0;
 	int lineBufferSize = sizeof(char);
 
