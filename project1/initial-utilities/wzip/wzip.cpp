@@ -40,6 +40,7 @@ void processFile(const char* filePath)
 			*((uint32_t*)fourByteCountBuffer) = 1;
 		}
 	}
+	write(STDOUT_FILENO, "\n", sizeof(char));
 
 	free(fourByteCountBuffer);
 	free(byteCharacterBuffer);
