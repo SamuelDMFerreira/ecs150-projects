@@ -16,6 +16,25 @@ void processFile(const char* filePath)
 		exit(1);
 	}
 
+	void* numBuffer = malloc(4 * sizeof(char));
+	void* charBuffer = malloc(sizeof(char));
+	
+	int readByte = read(fileDescriptor, numBuffer, 4 * sizeof(char));
+	readByte = read(fileDescriptor, charBuffer, sizeof(char));
+
+	while(readByte > 0)
+	{
+		for (uint32_t x = 0; x < (*((uint32_t*)numBuffer)); x++)
+		{
+			write(STDOUT_FILENO, charBuffer, sizeof(char));
+		}
+		readByte = read(fileDescriptor, numBuffer, 4 * sizeof(char));
+		readByte = read(fileDescriptor, charBuffer, sizeof(char));
+	}
+
+	free(numBuffer);
+	free(charBuffer);
+
 	close(fileDescriptor);	
 
 }
