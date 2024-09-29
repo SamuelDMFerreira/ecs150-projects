@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <istream>
-
+#include <stdint.h>
 
 void processFile(const char* filePath)
 {
@@ -14,6 +14,35 @@ void processFile(const char* filePath)
 		std::cerr << "cannot open file" << std::endl;
 		exit(1);
 	}
+
+	void* fourByteCountBuffer = malloc(4 * sizeof(char));
+	void* byteCharacterBuffer = malloc(sizeof(char));
+	*((uint32_t*)fourByteCountBuffer) = 1;
+	
+	// go through file and check for repeating values
+	int bytesRead = read(fileDescriptor, byteCharacterBuffer, sizeof(char));
+	while (bytesRead > 0)
+	{
+		char previousReadByte = *((char*)byteCharacterBuffer);
+		bytesRead = read(fileDescriptor, byteCharacterBuffer, sizeof(char));
+		if (previousReadByte == *((char*)byteCharacterBuffer))
+		{
+			*((uint32_t*)fourByteCountBuffer) += 1;
+		}
+		else
+		{
+			// if characters stop matching print out the information on previous character sequence
+			write(STDOUT_FILENO, fourByteCountBuffer, 4 * sizeof(char));
+			void* printPreviousBuffer = malloc(sizeof(char));
+			*((char*)printPreviousBuffer) = previousReadByte;
+			write(STDOUT_FILENO, printPreviousBuffer, sizeof(char));
+			free(printPreviousBuffer);
+			*((uint32_t*)fourByteCountBuffer) = 1;
+		}
+	}
+
+	free(fourByteCountBuffer);
+	free(byteCharacterBuffer);
 
 	close(fileDescriptor);
 }
