@@ -55,17 +55,17 @@ bool processLine(void* mainBuffer, int fileDescriptor, char* word)
 	while(wereByteRead > 0 && (*((char*)mainBuffer)) != '\n')
 	{
 		// add character read in mainBuffer to lineBuffer
+		lineBuffer[currIndex] = (*((char*)mainBuffer));
 		currIndex++;
 		lineBufferSize += sizeof(char);
 		lineBuffer = (char*) realloc(lineBuffer, lineBufferSize);
-		lineBuffer[currIndex] = (*((char*)mainBuffer));
 
 		wereByteRead = read(fileDescriptor, mainBuffer, byteRead);
 	}
 	// add end of string character, to be used by isWordInLine
-	currIndex++;
-	lineBufferSize += sizeof(char);
-	lineBuffer = (char*) realloc(lineBuffer, lineBufferSize);
+	//currIndex++;
+	//lineBufferSize += sizeof(char);
+	//lineBuffer = (char*) realloc(lineBuffer, lineBufferSize);
 	lineBuffer[currIndex] = '\0';
 
 	if (isWordInLine(lineBuffer, word))
