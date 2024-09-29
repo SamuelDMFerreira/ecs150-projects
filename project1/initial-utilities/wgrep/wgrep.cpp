@@ -5,6 +5,40 @@
 #include <iostream>
 #include <istream>
 
+// checks if word is in line
+bool isWordInLine(char* lineBuffer, char* word)
+{
+	int lineIndex = 0;
+	bool wordIsInLine = false;
+	while(lineBuffer[lineIndex] != '\0')
+	{
+		// if a character in word and line match, go ahead and check next few character to see if it fully matches
+		if (lineBuffer[lineIndex] == word[0])
+		{
+			int wordIndex = 0;
+			bool allCharMatch = true;
+			// check next word 
+			while(word[wordIndex] != '\0' && word[wordIndex] != '\n')
+			{
+				// no matching word if line end without full match or the match is full
+				if (lineBuffer[lineIndex + wordIndex] == '\0' || word[wordIndex] != lineBuffer[lineIndex + wordIndex])
+				{
+					allCharMatch = false;
+					break;
+				}
+				wordIndex++;
+			}
+			wordIsInLine = allCharMatch;
+		}
+		if (wordIsInLine)
+		{	
+			break;
+		}
+		lineIndex++;
+	}
+	return wordIsInLine;
+}
+
 // read one line and check if its has the word
 // returns false if end of line is reached, otherwise return true
 bool processLine(void* mainBuffer, int fileDescriptor, char* word)
@@ -28,9 +62,17 @@ bool processLine(void* mainBuffer, int fileDescriptor, char* word)
 
 		wereByteRead = read(fileDescriptor, mainBuffer, byteRead);
 	}
+	// add end of string character, to be used by isWordInLine
+	currIndex++;
+	lineBufferSize += sizeof(char);
+	lineBuffer = (char*) realloc(lineBuffer, lineBufferSize);
+	lineBuffer[currIndex] = '\0';
 
-	// temp right line to file
-	write(1, ((void*)lineBuffer), lineBufferSize);
+	if (isWordInLine(lineBuffer, word))
+	{
+		write(1, ((void*)lineBuffer), lineBufferSize);
+		write(1, "\n", sizeof(char));
+	}
 
 	free(lineBuffer);
 
