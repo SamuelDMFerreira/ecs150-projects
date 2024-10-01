@@ -6,7 +6,7 @@
 #include <istream>
 #include <stdint.h>
 
-void processFile(const char* filePath, void* fourByteCountBuffer, void* byteCharacterBuffer, void* previousCharBuff)
+void processFile(const char* filePath, void* countBuffer, void* currCharBuffer, void* prevCharBuffer)
 {
 	int fileDescriptor = open(filePath, O_RDONLY);
 	if (fileDescriptor < 0)
@@ -15,25 +15,28 @@ void processFile(const char* filePath, void* fourByteCountBuffer, void* byteChar
 		exit(1);
 	}
 
-	
+	int bytesRead;	
 	// go through file and check for repeating values
-	int bytesRead = read(fileDescriptor, byteCharacterBuffer, sizeof(char));
-	while (bytesRead > 0)
+	do
 	{
-		*((char*)previousCharBuff) = *((char*)byteCharacterBuffer);
-		bytesRead = read(fileDescriptor, byteCharacterBuffer, sizeof(char));
-		if (bytesRead > 0 && *((char*)previousCharBuff) == *((char*)byteCharacterBuffer))
+		bytesRead = read(fileDescriptor, currCharBuffer, sizeof(char));
+
+		if (bytesRead > 0 )
 		{
-			*((uint32_t*)fourByteCountBuffer) += 1;
+			if (bytesRead > 0 && (*((char*)currCharBuffer) == *((char*)prevCharBuffer) || *((char*)prevCharBuffer) == '\0'))
+			{
+				*((uint32_t*)countBuffer) += 1;
+			}
+			else if (bytesRead > 0)
+			{
+				// if characters stop matching print out the information on previous character sequence
+				write(STDOUT_FILENO, countBuffer, 4 * sizeof(char));
+				write(STDOUT_FILENO, prevCharBuffer, sizeof(char));
+				*((uint32_t*)countBuffer) = 1;
+			}
+			*((char*)prevCharBuffer) = *((char*)currCharBuffer);
 		}
-		else if (bytesRead > 0)
-		{
-			// if characters stop matching print out the information on previous character sequence
-			write(STDOUT_FILENO, fourByteCountBuffer, 4 * sizeof(char));
-			write(STDOUT_FILENO, previousCharBuff, sizeof(char));
-			*((uint32_t*)fourByteCountBuffer) = 1;
-		}
-	}	
+	} while (bytesRead > 0);	
 
 
 	close(fileDescriptor);
@@ -48,22 +51,23 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 	
-	void* fourByteCountBuffer = malloc(4 * sizeof(char));
-	void* byteCharacterBuffer = malloc(sizeof(char));
-	void* previousCharBuff = malloc(sizeof(char)); 
-	*((uint32_t*)fourByteCountBuffer) = 1;
+	void* countBuffer = malloc(4 * sizeof(char));
+	*((uint32_t*)countBuffer) = 0;
+	void* currCharBuffer = malloc(sizeof(char));
+	void* prevCharBuffer = malloc(sizeof(char));
+	*((char*)prevCharBuffer) = '\0';
 
 	// go through each file and process
 	for (int arg = 1; arg < argc; arg++)
 	{
 		const char* filePath = argv[arg];
-		processFile(filePath, fourByteCountBuffer, byteCharacterBuffer, previousCharBuff);
+		processFile(filePath, countBuffer, currCharBuffer, prevCharBuffer);
 	}
 	// print out the last number in the last file 
-	write(STDOUT_FILENO, fourByteCountBuffer, 4 * sizeof(char));
-	write(STDOUT_FILENO, previousCharBuff, sizeof(char));
-	
-	free(fourByteCountBuffer);
-	free(byteCharacterBuffer);
-	free(previousCharBuff);
+	write(STDOUT_FILENO, countBuffer, 4 * sizeof(char));
+	write(STDOUT_FILENO, prevCharBuffer, sizeof(char));
+
+	free(countBuffer);
+	free(currCharBuffer);
+	free(prevCharBuffer);
 }
