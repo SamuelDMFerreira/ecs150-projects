@@ -25,7 +25,7 @@ void processFile(const char* filePath)
 	{
 		char previousReadByte = *((char*)byteCharacterBuffer);
 		bytesRead = read(fileDescriptor, byteCharacterBuffer, sizeof(char));
-		if (bytesRead > 0 && previousReadByte == *((char*)byteCharacterBuffer))
+		if (previousReadByte == *((char*)byteCharacterBuffer))
 		{
 			*((uint32_t*)fourByteCountBuffer) += 1;
 		}
@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 	// error if not enough arguments
 	if (argc < 2)
 	{
-		std::cout << "wzip: file1 [file2 ...]" << std::endl;
+		std::cerr << "wzip: file1 [file2 ...]" << std::endl;
 		exit(1);
 	}
 
