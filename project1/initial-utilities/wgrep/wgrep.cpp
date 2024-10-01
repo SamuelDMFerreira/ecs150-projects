@@ -93,7 +93,7 @@ void processFile(const char* filePath, char* word)
 	int fileDescriptor = open(filePath, O_RDONLY);
 	if (fileDescriptor < 0)
 	{
-		std::cerr << "<wgrep: cannot open file" << std::endl;
+		std::cout << "wgrep: cannot open file" << std::endl;
 		exit(1);
 	}
 	void* mainBuffer = malloc(sizeof(char));
@@ -105,19 +105,36 @@ void processFile(const char* filePath, char* word)
 	close(fileDescriptor);	
 }
 
+void processSTDIN(char* word)
+{
+        void* mainBuffer = malloc(sizeof(char));
+
+        while(processLine(mainBuffer, STDIN_FILENO, word)){}
+
+        free(mainBuffer);
+}
+
 int main(int argc, char* argv[])
 {
-	// check if no arguments where put in
-	if (argc <= 1)
-	{
-		std::cout << "wgrep: searchterm [file ...]" << std::endl;
-		exit(1);
-	}
-	// go through each file 
-	for (int arg = 2; arg < argc; arg++)
-	{
-		const char* filePath = argv[arg];
-		processFile(filePath, argv[1]);
-	}
-	return 0;
+        // check if no arguments where put in
+        if (argc <= 1)
+        {
+                std::cout << "wgrep: searchterm [file ...]" << std::endl;
+                exit(1);
+        }
+        else if (argc == 2)
+        {
+                processSTDIN(argv[1]);
+        }
+        else
+        {
+                // go through each file
+                for (int arg = 2; arg < argc; arg++)
+                {
+                        const char* filePath = argv[arg];
+                        processFile(filePath, argv[1]);
+                }
+        }
+
+        return 0;
 }
