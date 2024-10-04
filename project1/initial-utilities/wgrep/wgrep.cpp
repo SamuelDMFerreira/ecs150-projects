@@ -70,7 +70,8 @@ bool processLine(void* mainBuffer, int fileDescriptor, char* word)
 
 	if (isWordInLine(lineBuffer, word))
 	{
-		write(1, ((void*)lineBuffer), lineBufferSize);
+		// don't print out null character
+		write(1, ((void*)lineBuffer), lineBufferSize - sizeof(char));	
 		write(1, "\n", sizeof(char));
 	}
 
