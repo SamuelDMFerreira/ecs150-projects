@@ -1,0 +1,13 @@
+{
+  "build": { "dockerfile": "Dockerfile" },
+  "customizations": {
+	"vscode": {
+		"extensions": [
+			"ms-vscode.cpptools",
+			"ms-vscode.cpptools-themes",
+			"ms-vscode.cmake-tools",
+			"ms-vscode.cpptools-extension-pack" 
+		]
+	}
+  }
+}
