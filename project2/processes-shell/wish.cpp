@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <string>
 
 int main(int argc, char* argv[])
 {
@@ -8,13 +10,31 @@ int main(int argc, char* argv[])
 		std::cout << "./wish [batch file]" << std::endl;
 		return 1;
 	}
-
-	// command fetching while loop
-	/*string command = "";	
-	while(command != "exit")
+	
+	
+	if (argc == 1)
 	{
-		
-	}*/
+		std::string commandStr = "";
+		// command fetching while loop
+		while(commandStr != "exit")
+		{
+			std::cout << "wish> ";
+			getline(std::cin, commandStr);	
+		}
+	}
+	else
+	{
+		std::ifstream input;
+		input.open(argv[1]);
+		std::string commandStr = "";
+		// command fetching while loop
+		while(!input.eof() && commandStr != "exit")
+		{
+			getline(input, commandStr);	
+		}
+	}
+
+
 
 	return 0;
 }
