@@ -11,6 +11,27 @@
 
 using namespace std;
 
+void executeArgument(char** argv)
+{
+	// fork and run process
+	int rc = fork();
+	if (rc < 0)
+	{
+		// fork fricked
+	}
+	else if (rc == 0)
+	{
+		// if child
+		execv(argv[0], argv);
+		exit(0);
+	}
+	else
+	{
+		// if parent
+		wait(NULL);		
+	}
+}
+
 void processCommand(string commandStr)
 {
 	// arguments for command
@@ -54,25 +75,17 @@ void processCommand(string commandStr)
 			strcpy(char_array, currW.c_str());
 			argv[argc - 1] = char_array;
 		}
+		executeArgument(argv);
+	}
+	else if (currW == "cd")
+	{
+		cSStrm >> currW;
+		char* char_array = (char*)malloc(currW.length() * sizeof(char));
+		strcpy(char_array, currW.c_str());
+		chdir(char_array);
+		free(char_array);
 	}
 
-	// fork and run process
-	int rc = fork();
-	if (rc < 0)
-	{
-		// fork fricked
-	}
-	else if (rc == 0)
-	{
-		// if child
-		execv(argv[0], argv);
-		exit(0);
-	}
-	else
-	{
-		// if parent
-		wait(NULL);		
-	}
 	
 	// free arguments
 	for (int x = 0; x < argc; x++)
@@ -91,7 +104,8 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 	
-	
+	chdir("/");
+
 	if (argc == 1)
 	{
 		string commandStr = "";
