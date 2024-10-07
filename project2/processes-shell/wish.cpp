@@ -11,6 +11,7 @@
 
 using namespace std;
 
+// executes arguments give a location
 void executeArgument(char** argv)
 {
 	// fork and run process
@@ -32,6 +33,53 @@ void executeArgument(char** argv)
 	}
 }
 
+// process arguments from string and adds them to the arguments array, this excludes the command arguments itself
+// returns number of arguments
+int processArguments(char** argv, int argc, stringstream& cSStrm)
+{
+	char* char_array;
+	string currW;
+	while(cSStrm >> currW)
+	{
+		argc++;
+		argv = (char**)realloc(argv, argc * sizeof(char*));	
+		char_array = new char[currW.length()];
+		strcpy(char_array, currW.c_str());
+		argv[argc - 1] = char_array;
+	}
+	return argc;
+}
+
+
+// purpose: handles the process the ls argument and executing
+// returns number of arguments
+int handleLS(char** argv, int argc, stringstream& cSStrm)
+{
+	string lsPath; // check for right ls string path
+	if (0 <= access("/bin/ls", X_OK))
+	{
+		lsPath = "/bin/ls";
+	}
+	else if (0 <= access("/usr/bin/ls", X_OK))
+	{
+		lsPath = "/usr/bin/ls";
+	}
+	else
+	{
+		exit(1);
+	}
+	
+	// put file path for ls into arguments
+	char* char_array = new char[lsPath.length()];
+	strcpy(char_array, lsPath.c_str());
+	argv[0] = char_array;
+	// loop through for other args
+	argc = processArguments(argv, argc, cSStrm);
+	executeArgument(argv);
+	return argc;
+}
+
+
 void processCommand(string commandStr)
 {
 	// arguments for command
@@ -48,40 +96,18 @@ void processCommand(string commandStr)
 	}
 	else if (currW == "ls")
 	{
-		string lsPath; // check for right ls string path
-		if (0 <= access("/bin/ls", X_OK))
-		{
-			lsPath = "/bin/ls";
-		}
-		else if (0 <= access("/usr/bin/ls", X_OK))
-		{
-			lsPath = "/usr/bin/ls";
-		}
-		else
-		{
-			exit(1);
-		}
-		
-		// put file path for ls into arguments
-		char* char_array = new char[lsPath.length()];
-		strcpy(char_array, lsPath.c_str());
-		argv[0] = char_array;
-		// loop through for other args
-		while(cSStrm >> currW)
-		{
-			argc++;
-			argv = (char**)realloc(argv, argc * sizeof(char*));	
-			char_array = new char[currW.length()];
-			strcpy(char_array, currW.c_str());
-			argv[argc - 1] = char_array;
-		}
-		executeArgument(argv);
+		argc = handleLS(argv, argc, cSStrm);
 	}
 	else if (currW == "cd")
 	{
 		cSStrm >> currW;
 		char* char_array = (char*)malloc(currW.length() * sizeof(char));
 		strcpy(char_array, currW.c_str());
+		if (cSStrm >> currW)
+		{
+			cout << "too many arguments for cd" << endl;
+			exit(1);
+		}
 		chdir(char_array);
 		free(char_array);
 	}
@@ -104,7 +130,10 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 	
+	// set starting base directory to /
 	chdir("/");
+	// make array of possible program paths, can be change by path command
+	//char** cmdPaths;
 
 	if (argc == 1)
 	{
