@@ -73,6 +73,7 @@ int handleLS(char** argv, int argc, stringstream& cSStrm)
 	char* char_array = new char[lsPath.length()];
 	strcpy(char_array, lsPath.c_str());
 	argv[0] = char_array;
+	argc++;
 	// loop through for other args
 	argc = processArguments(argv, argc, cSStrm);
 	executeArgument(argv);
@@ -80,12 +81,12 @@ int handleLS(char** argv, int argc, stringstream& cSStrm)
 }
 
 
-void processCommand(string commandStr)
+void processCommand(string commandStr, char** cmdPaths, int& cmdPathLen)
 {
 	// arguments for command
 	char** argv;
 	argv = (char**)malloc(sizeof(char*));
-	int argc = 1;	
+	int argc = 0;	
 	stringstream cSStrm(commandStr);
 	string currW;
 	cSStrm >> currW;
@@ -111,6 +112,49 @@ void processCommand(string commandStr)
 		chdir(char_array);
 		free(char_array);
 	}
+	else if (currW == "path")
+	{
+		// reset to intial state in program
+		for (int x = 1; x < cmdPathLen; x++)
+		{
+			free(cmdPaths[x]);
+		}
+		cmdPaths = (char**)realloc(cmdPaths, sizeof(char*));
+		cmdPathLen = 1;
+		// I reuse the processArgument function
+		// Because it bascially does what I want
+		cmdPathLen = processArguments(cmdPaths, cmdPathLen, cSStrm);	
+	}
+	else
+	{
+		string commandPath = "";
+		for (int x = 1; x < cmdPathLen; x++)
+		{
+			string potCommandPath(cmdPaths[x]);
+			stringstream ss;
+			ss << potCommandPath << "/" << currW;
+			potCommandPath = ss.str();
+			char* char_array = (char*)malloc(potCommandPath.length() * sizeof(char));
+			strcpy(char_array, potCommandPath.c_str());
+			if (0 <= access(char_array, X_OK))
+			{
+				commandPath = potCommandPath;
+				argv[0] = char_array; 
+				argc++;
+			}
+		}
+		if (commandPath == "")
+		{
+			cout << "command doesn't exist in current directory" << endl;
+			exit(1);
+		}
+		else
+		{
+			argc = processArguments(argv, argc, cSStrm);
+			executeArgument(argv);
+		}
+
+	}
 
 	
 	// free arguments
@@ -133,8 +177,9 @@ int main(int argc, char* argv[])
 	// set starting base directory to /
 	chdir("/");
 	// make array of possible program paths, can be change by path command
-	//char** cmdPaths;
-
+	char** cmdPaths = (char**)malloc(sizeof(char*));
+	int cmdPathLen = 1;
+		
 	if (argc == 1)
 	{
 		string commandStr = "";
@@ -143,7 +188,7 @@ int main(int argc, char* argv[])
 		{
 			cout << "wish> ";
 			getline(cin, commandStr);
-			processCommand(commandStr);
+			processCommand(commandStr, cmdPaths, cmdPathLen);
 		}
 	}
 	else
@@ -155,7 +200,7 @@ int main(int argc, char* argv[])
 		while(!input.eof() && commandStr != "exit")
 		{
 			getline(input, commandStr);
-			processCommand(commandStr);
+			processCommand(commandStr, cmdPaths, cmdPathLen);
 		}
 	}
 	return 0;
