@@ -80,6 +80,38 @@ int handleLS(char** argv, int argc, stringstream& cSStrm)
 	return argc;
 }
 
+// handles non built in commands
+int handleCMD(string currW, char** argv, int argc, stringstream& cSStrm, char** cmdPaths, int& cmdPathLen)
+{
+	string commandPath = "";
+	for (int x = 1; x < cmdPathLen; x++)
+	{
+		string potCommandPath(cmdPaths[x]);
+		stringstream ss;
+		ss << potCommandPath << "/" << currW;
+		potCommandPath = ss.str();
+		char* char_array = (char*)malloc(potCommandPath.length() * sizeof(char));
+		strcpy(char_array, potCommandPath.c_str());
+		if (0 <= access(char_array, X_OK))
+		{
+			commandPath = potCommandPath;
+			argv[0] = char_array; 
+			argc++;
+		}
+	}
+	if (commandPath == "")
+	{
+		cout << "command doesn't exist in current directory" << endl;
+		exit(1);
+	}
+	else
+	{
+		argc = processArguments(argv, argc, cSStrm);
+		executeArgument(argv);
+	}
+	return argc;
+}
+
 
 void processCommand(string commandStr, char** cmdPaths, int& cmdPathLen)
 {
@@ -127,33 +159,7 @@ void processCommand(string commandStr, char** cmdPaths, int& cmdPathLen)
 	}
 	else
 	{
-		string commandPath = "";
-		for (int x = 1; x < cmdPathLen; x++)
-		{
-			string potCommandPath(cmdPaths[x]);
-			stringstream ss;
-			ss << potCommandPath << "/" << currW;
-			potCommandPath = ss.str();
-			char* char_array = (char*)malloc(potCommandPath.length() * sizeof(char));
-			strcpy(char_array, potCommandPath.c_str());
-			if (0 <= access(char_array, X_OK))
-			{
-				commandPath = potCommandPath;
-				argv[0] = char_array; 
-				argc++;
-			}
-		}
-		if (commandPath == "")
-		{
-			cout << "command doesn't exist in current directory" << endl;
-			exit(1);
-		}
-		else
-		{
-			argc = processArguments(argv, argc, cSStrm);
-			executeArgument(argv);
-		}
-
+		argc = handleCMD(currW, argv, argc, cSStrm, cmdPaths, cmdPathLen);
 	}
 
 	
