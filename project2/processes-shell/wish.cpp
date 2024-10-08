@@ -50,39 +50,15 @@ int processArguments(char** argv, int argc, stringstream& cSStrm)
 	return argc;
 }
 
-
-// purpose: handles the process the ls argument and executing
-// returns number of arguments
-int handleLS(char** argv, int argc, stringstream& cSStrm)
-{
-	string lsPath; // check for right ls string path
-	if (0 <= access("/bin/ls", X_OK))
-	{
-		lsPath = "/bin/ls";
-	}
-	else if (0 <= access("/usr/bin/ls", X_OK))
-	{
-		lsPath = "/usr/bin/ls";
-	}
-	else
-	{
-		exit(1);
-	}
-	
-	// put file path for ls into arguments
-	char* char_array = new char[lsPath.length()];
-	strcpy(char_array, lsPath.c_str());
-	argv[0] = char_array;
-	argc++;
-	// loop through for other args
-	argc = processArguments(argv, argc, cSStrm);
-	executeArgument(argv);
-	return argc;
-}
-
 // handles non built in commands
-int handleCMD(string currW, char** argv, int argc, stringstream& cSStrm, char** cmdPaths, int& cmdPathLen)
+void handleCMD(string currW, stringstream& cSStrm, char** cmdPaths, int& cmdPathLen)
 {
+	// create array of arguments for the command
+	char** argv;
+	argv = (char**)malloc(sizeof(char*));
+	int argc = 0;	
+	
+	// check if the command exist within the command path, alway use the last command
 	string commandPath = "";
 	for (int x = 1; x < cmdPathLen; x++)
 	{
@@ -95,30 +71,36 @@ int handleCMD(string currW, char** argv, int argc, stringstream& cSStrm, char** 
 		if (0 <= access(char_array, X_OK))
 		{
 			commandPath = potCommandPath;
-			argv[0] = char_array; 
-			argc++;
+			argv[0] = char_array;
+			argc = 1;
 		}
 	}
+	// error if not in any of the command paths
 	if (commandPath == "")
 	{
-		cout << "command doesn't exist in current directory" << endl;
-		exit(1);
+		char error_message[30] = "An error has occurred\n";
+    		write(STDERR_FILENO, error_message, strlen(error_message));
 	}
+	// execute the command if it exist
+	// parse the rest of input and execute command with parameters
 	else
 	{
 		argc = processArguments(argv, argc, cSStrm);
 		executeArgument(argv);
 	}
-	return argc;
+	
+	// free arguments
+	for (int x = 0; x < argc; x++)
+	{
+		free(argv[x]);
+	}
+	free(argv);
 }
 
 
 void processCommand(string commandStr, char** cmdPaths, int& cmdPathLen)
 {
 	// arguments for command
-	char** argv;
-	argv = (char**)malloc(sizeof(char*));
-	int argc = 0;	
 	stringstream cSStrm(commandStr);
 	string currW;
 	cSStrm >> currW;
@@ -127,10 +109,6 @@ void processCommand(string commandStr, char** cmdPaths, int& cmdPathLen)
 	{
 		exit(0);
 	}
-	else if (currW == "ls")
-	{
-		argc = handleLS(argv, argc, cSStrm);
-	}
 	else if (currW == "cd")
 	{
 		cSStrm >> currW;
@@ -138,10 +116,13 @@ void processCommand(string commandStr, char** cmdPaths, int& cmdPathLen)
 		strcpy(char_array, currW.c_str());
 		if (cSStrm >> currW)
 		{
-			cout << "too many arguments for cd" << endl;
-			exit(1);
+			char error_message[30] = "An error has occurred\n";
+    			write(STDERR_FILENO, error_message, strlen(error_message));
 		}
-		chdir(char_array);
+		else
+		{
+			chdir(char_array);
+		}
 		free(char_array);
 	}
 	else if (currW == "path")
@@ -159,38 +140,26 @@ void processCommand(string commandStr, char** cmdPaths, int& cmdPathLen)
 	}
 	else
 	{
-		argc = handleCMD(currW, argv, argc, cSStrm, cmdPaths, cmdPathLen);
+		handleCMD(currW, cSStrm, cmdPaths, cmdPathLen);
 	}
 
 	
-	// free arguments
-	for (int x = 0; x < argc; x++)
-	{
-		free(argv[x]);
-	}
-	free(argv);
 }
 
 int main(int argc, char* argv[])
 {
-	// error if more than 2 arguments
-	if (argc > 2)
-	{
-		cout << "./wish [batch file]" << endl;
-		return 1;
-	}
 	
 	// set starting base directory to /
 	chdir("/");
 	// make array of possible program paths, can be change by path command
 	char** cmdPaths = (char**)malloc(sizeof(char*));
 	int cmdPathLen = 1;
-		
+	
 	if (argc == 1)
 	{
 		string commandStr = "";
 		// command fetching while loop
-		while(commandStr != "exit")
+		while(!cin.eof())
 		{
 			cout << "wish> ";
 			getline(cin, commandStr);
@@ -203,7 +172,7 @@ int main(int argc, char* argv[])
 		input.open(argv[1]);
 		string commandStr = "";
 		// command fetching while loop
-		while(!input.eof() && commandStr != "exit")
+		while(!input.eof())
 		{
 			getline(input, commandStr);
 			processCommand(commandStr, cmdPaths, cmdPathLen);
