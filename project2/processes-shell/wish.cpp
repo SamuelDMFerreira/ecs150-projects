@@ -33,119 +33,6 @@ void executeArgument(char** argv)
 	}
 }
 
-// process arguments from string and adds them to the arguments array, this excludes the command arguments itself
-// returns number of arguments
-/*int processArguments(char** argv, int argc, stringstream& cSStrm)
-{
-	char* char_array;
-	string currW;
-	while(cSStrm >> currW)
-	{
-		argc++;
-		argv = (char**)realloc(argv, argc * sizeof(char*));	
-		char_array = new char[currW.length()];
-		strcpy(char_array, currW.c_str());
-		argv[argc - 1] = char_array;
-	}
-	return argc;
-}*/
-
-// handles non built in commands
-/*void handleCMD(string currW, stringstream& cSStrm, char** cmdPaths, int& cmdPathLen)
-{
-	// create array of arguments for the command
-	char** argv;
-	argv = (char**)malloc(sizeof(char*));
-	int argc = 0;	
-	
-	// check if the command exist within the command path, alway use the last command
-	string commandPath = "";
-	for (int x = 1; x < cmdPathLen; x++)
-	{
-		string potCommandPath(cmdPaths[x]);
-		stringstream ss;
-		ss << potCommandPath << "/" << currW;
-		potCommandPath = ss.str();
-		char* char_array = (char*)malloc(potCommandPath.length() * sizeof(char));
-		strcpy(char_array, potCommandPath.c_str());
-		if (0 <= access(char_array, X_OK))
-		{
-			commandPath = potCommandPath;
-			argv[0] = char_array;
-			argc = 1;
-		}
-	}
-	// error if not in any of the command paths
-	if (commandPath == "")
-	{
-		char error_message[30] = "An error has occurred\n";
-    		write(STDERR_FILENO, error_message, strlen(error_message));
-	}
-	// execute the command if it exist
-	// parse the rest of input and execute command with parameters
-	else
-	{
-		argc = processArguments(argv, argc, cSStrm);
-		executeArgument(argv);
-	}
-	
-	// free arguments
-	for (int x = 0; x < argc; x++)
-	{
-		free(argv[x]);
-	}
-	free(argv);
-}*/
-
-
-/*void processCommand(string commandStr, char** cmdPaths, int& cmdPathLen)
-{
-	// arguments for command
-	stringstream cSStrm(commandStr);
-	string currW;
-	cSStrm >> currW;
-
-	if (commandStr == "exit") // this should be called first
-	{
-		exit(0);
-	}
-	else if (currW == "cd")
-	{
-		cSStrm >> currW;
-		char* char_array = (char*)malloc(currW.length() * sizeof(char));
-		strcpy(char_array, currW.c_str());
-		if (cSStrm >> currW)
-		{
-			char error_message[30] = "An error has occurred\n";
-    			write(STDERR_FILENO, error_message, strlen(error_message));
-		}
-		else
-		{
-			chdir(char_array);
-		}
-		free(char_array);
-	}
-	else if (currW == "path")
-	{
-		// reset to intial state in program
-		for (int x = 1; x < cmdPathLen; x++)
-		{
-			free(cmdPaths[x]);
-		}
-		cmdPaths = (char**)realloc(cmdPaths, sizeof(char*));
-		cmdPathLen = 1;
-		// I reuse the processArgument function
-		// Because it bascially does what I want
-		cmdPathLen = processArguments(cmdPaths, cmdPathLen, cSStrm);	
-	}
-	else
-	{
-		handleCMD(currW, cSStrm, cmdPaths, cmdPathLen);
-	}
-
-	
-}*/
-
 // helper class to store all the information relating to commands
 class Commands 
 {
@@ -179,12 +66,6 @@ Commands processCommands(string inputLine)
 
 	while (strm >> currWord)
 	{
-		// exit if exit
-		// should be else where in code, but this is most convient place
-		if (currWord == "exit" && currNumArgs == 0)
-		{
-			exit(0);
-		}
 
 		// allocate new command if the & shows up
 		if (currWord == "&")
@@ -228,7 +109,11 @@ void executeCommand(Commands commands, int currCmd, char** cmdPaths, int cmdPath
 {
 	if (!strcmp((commands.cmdStrs)[currCmd][0], "cd"))
 	{
-		chdir((commands.cmdStrs)[currCmd][1]);
+		// this shouldn't execute
+	}
+	else if (!strcmp((commands.cmdStrs)[currCmd][0], "exit"))
+	{
+		// this shouldn't execute
 	}
 	else
 	{
@@ -272,16 +157,29 @@ void processLineInput(string inputLine, char** cmdPaths, int cmdPathLen)
 	int currCmd;
 	for (currCmd = 0; currCmd < commands.numOfCmds; currCmd++)
 	{
-		int pid = fork();
-		if (pid == 0)
+		// temporary because this is suppose to be parallel 
+		// but run commands hear if builtin, path or cd
+		if (!strcmp((commands.cmdStrs)[currCmd][0], "cd"))
 		{
-			isChild = true;
-			break;
+			chdir((commands.cmdStrs)[currCmd][1]);
 		}
-		else 
+		else if (!strcmp((commands.cmdStrs)[currCmd][0], "exit"))
 		{
-			int status;
-			waitpid(pid, &status, 0);
+			exit(0);
+		}
+		else
+		{
+			int pid = fork();
+			if (pid == 0)
+			{
+				isChild = true;
+				break;
+			}
+			else 
+			{
+				int status;
+				waitpid(pid, &status, 0);
+			}
 		}
 	}
 
