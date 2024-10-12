@@ -99,6 +99,10 @@ Commands processCommands(string inputLine)
 					
 		}
 	}
+	if (currNumArgs != 0)
+	{
+		numArgsPerCmd[numOfCmds - 1] = currNumArgs;
+	}
 
 	Commands cmds(commands, numOfCmds, numArgsPerCmd);
 
@@ -149,8 +153,33 @@ void executeCommand(Commands commands, int currCmd, char** cmdPaths, int cmdPath
 	}
 }
 
+void handlePath(Commands commands, int currCmd, char**& cmdPaths, int& cmdPathLen)
+{
+	// free previous paths
+	for (int x = 0; x < cmdPathLen; x++)
+	{
+		free(cmdPaths[x]);
+	}
+	if (cmdPathLen > 0)
+	{
+		free(cmdPaths);
+		cmdPathLen = 0;
+	}
+	// put new commands paths in
+	// if path specificed any arguments
+	// do this by looping through each argument in the command string
+	// execluding the first one
+	for (int x = 1; x < (commands.numArgsPerCmd)[currCmd]; x++)
+	{
+		cmdPaths = (char**)realloc(cmdPaths, x * sizeof(char*));
+		cmdPaths[x - 1] = (commands.cmdStrs)[currCmd][x];
+		cmdPathLen++;
+	}
+}
+
 // process and execute line of user input
-void processLineInput(string inputLine, char** cmdPaths, int cmdPathLen)
+// return new command paths if the "path" command was executed
+void processLineInput(string inputLine, char**& cmdPaths, int& cmdPathLen)
 {
 	Commands commands = processCommands(inputLine);
 	bool isChild = false;
@@ -166,6 +195,10 @@ void processLineInput(string inputLine, char** cmdPaths, int cmdPathLen)
 		else if (!strcmp((commands.cmdStrs)[currCmd][0], "exit"))
 		{
 			exit(0);
+		}
+		else if (!strcmp((commands.cmdStrs)[currCmd][0], "path"))
+		{
+			handlePath(commands, currCmd, cmdPaths, cmdPathLen);
 		}
 		else
 		{
