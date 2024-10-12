@@ -146,6 +146,110 @@ void executeArgument(char** argv)
 	
 }*/
 
+// helper class to store all the information relating to commands
+class Commands 
+{
+	public:
+		char*** cmdStrs;
+		int numOfCmds;
+		int* numArgsPerCmd;
+
+	Commands(char*** ncmdStrs, int nnumOfCmds, int* nnumArgsPerCmd)
+	{
+		cmdStrs = ncmdStrs;
+		numOfCmds = nnumOfCmds;
+		numArgsPerCmd = nnumArgsPerCmd;
+	}
+
+	void ttttest()
+	{
+		cout << "uss" << endl;
+	}
+};
+
+
+// this method takes the user input string and processes it
+// It will be split into commands which are seperated by an & on the line
+// Each command, a char** array, are further sub divided into arguments
+// each argument is a char* string.
+Commands processCommands(string inputLine)
+{
+	char*** commands = (char***)malloc(sizeof(char**));
+	int numOfCmds = 0;
+	int currNumArgs = 0;
+	int* numArgsPerCmd = (int*)malloc(sizeof(int));
+
+	stringstream strm(inputLine);
+	string currWord;
+
+	while (strm >> currWord)
+	{
+		// allocate new command if the & shows up
+		if (currWord == "&")
+		{
+			numArgsPerCmd[numOfCmds - 1] = currNumArgs;
+			numOfCmds++;
+			commands = (char***)realloc(commands, sizeof(char**) * numOfCmds);
+			commands[numOfCmds - 1] = (char**)malloc(sizeof(char*));	
+			numArgsPerCmd = (int*)realloc(numArgsPerCmd, numOfCmds * sizeof(int));
+			currNumArgs = 0;
+		}
+		// if user input any commands on line put them in
+		else if (numOfCmds == 0)
+		{	
+			numOfCmds++;
+			commands[0] = (char**)malloc(sizeof(char*));
+			numArgsPerCmd = (int*)realloc(numArgsPerCmd, numOfCmds * sizeof(int));
+			currNumArgs++;
+			char* char_array = new char[currWord.length()];
+			strcpy(char_array, currWord.c_str());
+			commands[numOfCmds - 1][currNumArgs - 1] = char_array;
+		}
+		// in any other case add argument/parameter to an individual command 
+		else
+		{
+			currNumArgs++;
+			commands[numOfCmds - 1] = (char**)realloc(commands[numOfCmds - 1], currNumArgs * sizeof(char*));
+			char* char_array = new char[currWord.length()];
+			strcpy(char_array, currWord.c_str());
+			commands[numOfCmds - 1][currNumArgs - 1] = char_array;
+					
+		}
+	}
+
+	Commands cmds(commands, numOfCmds, numArgsPerCmd);
+
+	return cmds;
+}
+
+void processLineInput(string inputLine, char** cmdPaths, int cmdPathLen)
+{
+	Commands commands = processCommands(inputLine);
+	bool isChild = false;
+	int currCmd;
+	for (currCmd = 0; currCmd < commands.numOfCmds; currCmd++)
+	{
+		int pid = fork();
+		if (pid == 0)
+		{
+			isChild = true;
+			break;
+		}
+		else 
+		{
+			int status;
+			waitpid(pid, &status, 0);
+		}
+	}
+
+	if (isChild)
+	{	
+		cout << currCmd << endl;
+		exit(0);
+	}
+
+}
+
 int main(int argc, char* argv[])
 {
 	
@@ -156,33 +260,33 @@ int main(int argc, char* argv[])
 	int cmdPathLen = 1;
 	
 	// just for testing when reorganizing my code 
-	string path = "/bin"  
+	string path = "/bin"; 
 	char* char_array = (char*)malloc(path.length() * sizeof(char));
-	strcpy(char_array, currW.c_str());
+	strcpy(char_array, path.c_str());
 	cmdPaths[0] = char_array;
 
 	
 	if (argc == 1)
 	{
-		string commandStr = "";
+		string inputLine = "";
 		// command fetching while loop
 		while(!cin.eof())
 		{
 			cout << "wish> ";
-			getline(cin, commandStr);
-			processCommand(commandStr, cmdPaths, cmdPathLen);
+			getline(cin, inputLine);
+			processLineInput(inputLine, cmdPaths, cmdPathLen);
 		}
 	}
 	else
 	{
-		ifstream input;
-		input.open(argv[1]);
-		string commandStr = "";
+		ifstream inputFile;
+		inputFile.open(argv[1]);
+		string inputLine = "";
 		// command fetching while loop
-		while(!input.eof())
+		while(!inputFile.eof())
 		{
-			getline(input, commandStr);
-			processCommand(commandStr, cmdPaths, cmdPathLen);
+			getline(inputFile, inputLine);
+			processLineInput(inputLine, cmdPaths, cmdPathLen);
 		}
 	}
 	return 0;
