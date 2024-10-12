@@ -35,7 +35,7 @@ void executeArgument(char** argv)
 
 // process arguments from string and adds them to the arguments array, this excludes the command arguments itself
 // returns number of arguments
-int processArguments(char** argv, int argc, stringstream& cSStrm)
+/*int processArguments(char** argv, int argc, stringstream& cSStrm)
 {
 	char* char_array;
 	string currW;
@@ -48,10 +48,10 @@ int processArguments(char** argv, int argc, stringstream& cSStrm)
 		argv[argc - 1] = char_array;
 	}
 	return argc;
-}
+}*/
 
 // handles non built in commands
-void handleCMD(string currW, stringstream& cSStrm, char** cmdPaths, int& cmdPathLen)
+/*void handleCMD(string currW, stringstream& cSStrm, char** cmdPaths, int& cmdPathLen)
 {
 	// create array of arguments for the command
 	char** argv;
@@ -95,10 +95,10 @@ void handleCMD(string currW, stringstream& cSStrm, char** cmdPaths, int& cmdPath
 		free(argv[x]);
 	}
 	free(argv);
-}
+}*/
 
 
-void processCommand(string commandStr, char** cmdPaths, int& cmdPathLen)
+/*void processCommand(string commandStr, char** cmdPaths, int& cmdPathLen)
 {
 	// arguments for command
 	stringstream cSStrm(commandStr);
@@ -144,7 +144,7 @@ void processCommand(string commandStr, char** cmdPaths, int& cmdPathLen)
 	}
 
 	
-}
+}*/
 
 int main(int argc, char* argv[])
 {
@@ -154,6 +154,13 @@ int main(int argc, char* argv[])
 	// make array of possible program paths, can be change by path command
 	char** cmdPaths = (char**)malloc(sizeof(char*));
 	int cmdPathLen = 1;
+	
+	// just for testing when reorganizing my code 
+	string path = "/bin"  
+	char* char_array = (char*)malloc(path.length() * sizeof(char));
+	strcpy(char_array, currW.c_str());
+	cmdPaths[0] = char_array;
+
 	
 	if (argc == 1)
 	{
