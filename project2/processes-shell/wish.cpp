@@ -160,11 +160,6 @@ class Commands
 		numOfCmds = nnumOfCmds;
 		numArgsPerCmd = nnumArgsPerCmd;
 	}
-
-	void ttttest()
-	{
-		cout << "uss" << endl;
-	}
 };
 
 
@@ -184,6 +179,13 @@ Commands processCommands(string inputLine)
 
 	while (strm >> currWord)
 	{
+		// exit if exit
+		// should be else where in code, but this is most convient place
+		if (currWord == "exit" && currNumArgs == 0)
+		{
+			exit(0);
+		}
+
 		// allocate new command if the & shows up
 		if (currWord == "&")
 		{
@@ -222,6 +224,47 @@ Commands processCommands(string inputLine)
 	return cmds;
 }
 
+void executeCommand(Commands commands, int currCmd, char** cmdPaths, int cmdPathLen)
+{
+	if (!strcmp((commands.cmdStrs)[currCmd][0], "cd"))
+	{
+		chdir((commands.cmdStrs)[currCmd][1]);
+	}
+	else
+	{
+		// check if the command exist within the command path, alway use the last command
+		string commandPath = "";
+		for (int x = 0; x < cmdPathLen; x++)
+		{
+			string potCommandPath(cmdPaths[x]);
+			stringstream ss;
+			ss << potCommandPath << "/" << (commands.cmdStrs)[currCmd][0];
+			potCommandPath = ss.str();
+			char* char_array = (char*)malloc(potCommandPath.length() * sizeof(char));
+			strcpy(char_array, potCommandPath.c_str());
+			if (0 <= access(char_array, X_OK))
+			{
+				commandPath = potCommandPath;
+				(commands.cmdStrs)[currCmd][0] = char_array;
+			}
+		}
+		// error if not in any of the command paths
+		if (commandPath == "")
+		{
+			char error_message[30] = "An error has occurred\n";
+			write(STDERR_FILENO, error_message, strlen(error_message));
+		}
+		// execute the command if it exist
+		// parse the rest of input and execute command with parameters
+		else
+		{
+			executeArgument((commands.cmdStrs)[currCmd]);
+		}
+					
+	}
+}
+
+// process and execute line of user input
 void processLineInput(string inputLine, char** cmdPaths, int cmdPathLen)
 {
 	Commands commands = processCommands(inputLine);
@@ -244,7 +287,7 @@ void processLineInput(string inputLine, char** cmdPaths, int cmdPathLen)
 
 	if (isChild)
 	{	
-		cout << currCmd << endl;
+		executeCommand(commands, currCmd, cmdPaths, cmdPathLen);
 		exit(0);
 	}
 
